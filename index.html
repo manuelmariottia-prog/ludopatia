@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LUDOPATÍA</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="hero compact">
+    <div>
+      <p class="eyebrow">Registro de juegos</p>
+      <h1>LUDOPATÍA</h1>
+      <p class="subtitle">Carga rápida de partidas y seguimiento Manu vs Sofi.</p>
+    </div>
+    <div class="actions">
+      <button id="homeBtn" class="secondary">Inicio</button>
+      <button id="detailsBtnTop" class="primary">Ver detalles y gráficos</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="homePage">
+      <section class="panel main-card">
+        <div class="section-title">
+          <h2>Nueva partida</h2>
+          <span id="saveStatus">Modo local</span>
+        </div>
+        <form id="matchForm" class="match-form-new">
+          <div class="form-row top-row">
+            <label>Fecha<input type="date" id="fecha" required></label>
+            <label>Juego
+              <select id="juego"></select>
+            </label>
+            <label>Locación
+              <select id="lugar"></select>
+            </label>
+          </div>
+
+          <div class="form-row score-row">
+            <label>Puntaje Sofi<input type="number" id="puntajeSofi" required></label>
+            <label>Puntaje Manu<input type="number" id="puntajeManu" required></label>
+          </div>
+
+          <button type="submit" class="primary full load-match">Cargar partida</button>
+        </form>
+      </section>
+
+      <section class="panel summary-card">
+        <div class="section-title">
+          <h2>Resumen general</h2>
+        </div>
+        <div class="scoreboard" id="scoreboard"></div>
+        <button id="detailsBtn" class="primary full">Ver todos los detalles y gráficos</button>
+      </section>
+
+      <section class="panel history-home">
+        <div class="section-title">
+          <h2>Historial de partidas</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Juego</th><th>Lugar</th><th>Sofi</th><th>Manu</th><th></th></tr>
+            </thead>
+            <tbody id="history"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section id="detailsPage" class="hidden">
+      <section class="details-header">
+        <button id="backBtn" class="secondary">← Volver al inicio</button>
+      </section>
+
+      <section class="panel game-filter-panel">
+        <div class="section-title centered-title">
+          <h2>Ver detalle por juego</h2>
+        </div>
+        <div id="gameDetailButtons" class="game-detail-buttons"></div>
+      </section>
+
+      <section class="grid charts general-charts">
+        <div class="panel chart-wide"><h2>Total de victorias por juego</h2><canvas id="generalWinsByGameChart"></canvas></div>
+        <div class="panel chart-wide"><h2>Total de victorias por locación</h2><canvas id="generalWinsByLocationChart"></canvas></div>
+        <div class="panel chart-wide"><h2>Total de victorias por fecha</h2><canvas id="generalWinsByDateChart"></canvas></div>
+      </section>
+
+
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+
+
+  <div id="gameDetailOverlay" class="modal-overlay hidden">
+    <div class="modal-card game-detail-card">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow dark">Detalle por juego</p>
+          <h2 id="gameDetailTitle">Juego</h2>
+        </div>
+        <button id="gameDetailClose" class="icon-btn">×</button>
+      </div>
+
+      <section class="game-detail-summary" id="gameDetailSummary"></section>
+
+      <section class="grid charts game-detail-charts">
+        <div class="panel"><h2>Partidas ganadas</h2><canvas id="detailWinsChart"></canvas></div>
+        <div class="panel"><h2>Puntos totales</h2><canvas id="detailPointsChart"></canvas></div>
+        <div class="panel"><h2>Victorias por locación</h2><canvas id="detailLocationChart"></canvas></div>
+        <div class="panel"><h2>Victorias por fecha</h2><canvas id="detailDateChart"></canvas></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="modalOverlay" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow dark" id="modalEyebrow">Configuración</p>
+          <h2 id="modalTitle">Agregar</h2>
+        </div>
+        <button id="modalClose" class="icon-btn">×</button>
+      </div>
+
+      <div id="modalCreateArea" class="modal-create">
+        <label id="modalNameLabel">Nombre
+          <input id="modalName" type="text" placeholder="Nombre">
+        </label>
+        <label id="modalColorLabel">Color
+          <input id="modalColor" type="color" value="#12BA69">
+        </label>
+        <button id="modalSave" class="primary">Guardar</button>
+      </div>
+
+      <button id="modalSettingsBtn" class="settings-btn">⚙ Configurar cargados</button>
+
+      <div id="modalSettingsArea" class="modal-settings hidden">
+        <h3 id="modalSettingsTitle">Cargados</h3>
+        <div id="modalList" class="config-list"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="editMatchOverlay" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow dark">Editar partida</p>
+          <h2>Modificar datos</h2>
+        </div>
+        <button id="editMatchClose" class="icon-btn">×</button>
+      </div>
+
+      <form id="editMatchForm" class="match-form-new">
+        <input type="hidden" id="editMatchId">
+        <div class="form-row top-row">
+          <label>Fecha<input type="date" id="editFecha" required></label>
+          <label>Juego<select id="editJuego"></select></label>
+          <label>Locación<select id="editLugar"></select></label>
+        </div>
+        <div class="form-row score-row">
+          <label>Puntaje Sofi<input type="number" id="editPuntajeSofi" required></label>
+          <label>Puntaje Manu<input type="number" id="editPuntajeManu" required></label>
+        </div>
+        <button type="submit" class="primary full load-match">Guardar cambios</button>
+        <button type="button" id="deleteMatchFromEdit" class="danger full">Eliminar partida</button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
