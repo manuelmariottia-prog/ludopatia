@@ -2,8 +2,22 @@
 import { initialData } from "./data.js";
 import { firebaseConfig } from "./firebase-config.js";
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
 const STORAGE_KEY = "ludopatia_sm_v4";
 const GAME_COLORS_KEY = "ludopatia_game_colors_v4";
+const firebaseEnabled = Boolean(firebaseConfig?.apiKey);
+const firebaseApp = firebaseEnabled ? initializeApp(firebaseConfig) : null;
+const db = firebaseEnabled ? getFirestore(firebaseApp) : null;
+const cloudDocRef = firebaseEnabled ? doc(db, "app", "state") : null;
+let syncingFromCloud = false;
 
 const PALETTE = {
   blue: "#3DB1F5",
@@ -48,9 +62,22 @@ function loadState(){
   return data;
 }
 
-function saveState(){
+async function saveState(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  if($("saveStatus")) $("saveStatus").textContent = "Guardado local";
+
+  if(!firebaseEnabled){
+    if($("saveStatus")) $("saveStatus").textContent = "Guardado local";
+    return;
+  }
+
+  if(syncingFromCloud) return;
+
+  await setDoc(cloudDocRef, {
+    ...state,
+    updatedAt: new Date().toISOString()
+  });
+
+  if($("saveStatus")) $("saveStatus").textContent = "Guardado en nube";
 }
 
 function normalizeName(value){
@@ -659,8 +686,42 @@ window.addEventListener("resize", () => {
   }, 150);
 });
 
-render();
+async function initCloudSync(){
+  if(!firebaseEnabled){
+    render();
+    return;
+  }
 
-if(firebaseConfig?.apiKey){
-  $("saveStatus").textContent = "Firebase configurado pendiente de conexión";
+  if($("saveStatus")) $("saveStatus").textContent = "Conectando nube...";
+
+  const snap = await getDoc(cloudDocRef);
+
+  if(!snap.exists()){
+    await setDoc(cloudDocRef, {
+      ...state,
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  onSnapshot(cloudDocRef, (snapshot) => {
+    if(!snapshot.exists()) return;
+
+    syncingFromCloud = true;
+    const cloudState = snapshot.data();
+
+    state = {
+      games: cloudState.games || [],
+      locations: cloudState.locations || [],
+      matches: cloudState.matches || []
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+    if($("saveStatus")) $("saveStatus").textContent = "Modo nube";
+    render();
+
+    syncingFromCloud = false;
+  });
 }
+
+initCloudSync();
