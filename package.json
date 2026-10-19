@@ -1,12 +1,14 @@
 {
+  "name": "ludopatia-3-1-corregida",
+  "version": "3.1.0",
+  "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest"
-  },
-  "devDependencies": {}
+    "vite": "^5.4.21"
+  }
 }

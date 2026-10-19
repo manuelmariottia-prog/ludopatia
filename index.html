@@ -3,28 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LUDOPATÍA</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <title>LUDOPATÍA 3.2 · Manu & Sofi</title>
+  <link rel="icon" type="image/png" href="/favicon.png?v=2" />
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png?v=2" />
+  <link rel="manifest" href="/manifest.webmanifest?v=2" />
+  <meta name="theme-color" content="#0b4147" />
+  <link rel="stylesheet" href="./styles.css?v=3.0.7" />
 </head>
 <body>
   <header class="hero compact">
     <div>
-      <p class="eyebrow">Registro de juegos</p>
-      <h1>LUDOPATÍA</h1>
-      <p class="subtitle">Carga rápida de partidas y seguimiento Manu vs Sofi.</p>
+      <p class="eyebrow">MANU / SOFI &nbsp;·&nbsp; MATCH TRACKER</p>
+      <h1>LUDOPATÍA<span class="version-tag">03</span></h1>
+      <p class="subtitle">Un registro compartido. Una rivalidad interminable.</p>
     </div>
     <div class="actions">
       <button id="homeBtn" class="secondary">Inicio</button>
       <button id="detailsBtnTop" class="primary">Ver detalles y gráficos</button>
     </div>
   </header>
+  <section class="backup-tools" aria-label="Respaldos y sincronización">
+    <div><strong>Solo nube · historial nuevo</strong><small>Base nueva vacía. Las partidas se guardan únicamente en Firebase.</small></div>
+    <button id="downloadBackup" type="button">↓ Exportar respaldo</button>
+    <label class="backup-upload">↑ Importar respaldo <input id="importBackup" type="file" accept=".json,application/json" hidden></label>
+    <button id="publishCloud" type="button" hidden>Publicar historial en nube</button>
+  </section>
 
   <main>
     <section id="homePage">
       <section class="panel main-card">
         <div class="section-title">
-          <h2>Nueva partida</h2>
-          <span id="saveStatus">Modo local</span>
+          <h2>Registrar partida</h2>
+          <span id="saveStatus">Conectando con Firebase…</span>
         </div>
         <form id="matchForm" class="match-form-new">
           <div class="form-row top-row">
@@ -48,7 +58,7 @@
 
       <section class="panel summary-card">
         <div class="section-title">
-          <h2>Resumen general</h2>
+          <h2>Marcador general</h2>
         </div>
         <div class="scoreboard" id="scoreboard"></div>
         <button id="detailsBtn" class="primary full">Ver todos los detalles y gráficos</button>
@@ -56,7 +66,7 @@
 
       <section class="panel history-home">
         <div class="section-title">
-          <h2>Historial de partidas</h2>
+          <h2>Últimos encuentros</h2>
         </div>
         <div class="table-wrap">
           <table>
@@ -91,7 +101,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=3.2.1"></script>
 
 
   <div id="gameDetailOverlay" class="modal-overlay hidden">

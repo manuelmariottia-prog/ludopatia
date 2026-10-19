@@ -1,5 +1,4 @@
 
-import { initialData } from "./data.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
@@ -8,15 +7,16 @@ import {
   doc,
   getDoc,
   setDoc,
-  onSnapshot
+  onSnapshot,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const STORAGE_KEY = "ludopatia_sm_v4";
-const GAME_COLORS_KEY = "ludopatia_game_colors_v4";
+const CLOUD_DOCUMENT = "state_clean_20261019_v1"; // Base exclusiva nueva. No lee ni modifica documentos anteriores.
+let gameColors = {};
 const firebaseEnabled = Boolean(firebaseConfig?.apiKey);
 const firebaseApp = firebaseEnabled ? initializeApp(firebaseConfig) : null;
 const db = firebaseEnabled ? getFirestore(firebaseApp) : null;
-const cloudDocRef = firebaseEnabled ? doc(db, "app", "state") : null;
+const cloudDocRef = firebaseEnabled ? doc(db, "app", CLOUD_DOCUMENT) : null;
 let syncingFromCloud = false;
 
 const PALETTE = {
@@ -42,42 +42,85 @@ const DEFAULT_GAME_COLORS = [
   "#B8F2E6", "#AED9E0", "#FFA69E", "#5E6472"
 ];
 
-let state = loadState();
+let state = {games:["Escoba","Burako","10.000","Azul"],locations:["Casa Sofi","Casa Manu","Casita🏠","Otro"],matches:[]};
 let activeModalType = null;
 let activeGameDetail = null;
 let chartResizeTimer = null;
 
 const $ = (id) => document.getElementById(id);
 
-function loadState(){
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if(saved){
-    try { return JSON.parse(saved); } catch(e){}
-  }
-  const data = structuredClone(initialData);
-  data.matches = data.matches.map(m => ({
-    ...m,
-    ganador: Number(m.puntajeManu) > Number(m.puntajeSofi) ? "MANU" : "SOFI"
-  }));
-  return data;
-}
-
+let cloudReady = false;
+let cloudRevision = 0;
+let lastCloudMatches = [];
+let pendingSave = Promise.resolve();
+function status(text){ if($("saveStatus")) $("saveStatus").textContent = text; }
 async function saveState(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-
-  if(!firebaseEnabled){
-    if($("saveStatus")) $("saveStatus").textContent = "Guardado local";
-    return;
+  if(!firebaseEnabled || !cloudReady){ status("Sin conexión · no se guardó"); alert("No hay conexión con Firebase. No se puede guardar esta partida."); return; }
+  const copy = structuredClone(state);
+  const revision = ++cloudRevision;
+  pendingSave = pendingSave.catch(()=>{}).then(async()=>{
+    status("Guardando en nube...");
+    const saved = await runTransaction(db, async transaction => {
+      const snap = await transaction.get(cloudDocRef);
+      if(!snap.exists()) throw Error("La nube todavía no está inicializada");
+      const remote = snap.data();
+      const remoteMatches = remote.matches || [];
+      const previousIds = new Set(lastCloudMatches.map(m=>String(m.id)));
+      const localIds = new Set(copy.matches.map(m=>String(m.id)));
+      const deletedIds = new Set([...previousIds].filter(id=>!localIds.has(id)));
+      const combined = new Map(remoteMatches.filter(m=>!deletedIds.has(String(m.id))).map(m=>[String(m.id),m]));
+      for(const m of copy.matches){
+        const id=String(m.id);
+        if(!previousIds.has(id) || JSON.stringify(m)!==JSON.stringify(lastCloudMatches.find(x=>String(x.id)===id))) combined.set(id,m);
+      }
+      const merged={
+        games:[...new Set([...(remote.games||[]),...(copy.games||[])])],
+        locations:[...new Set([...(remote.locations||[]),...(copy.locations||[])])],
+        matches:[...combined.values()],updatedAt:new Date().toISOString()
+      };
+      transaction.set(cloudDocRef,merged);
+      return merged;
+    });
+    lastCloudMatches=structuredClone(saved.matches);
+    if(revision===cloudRevision) status("Sincronizado en nube");
+  }).catch(err=>{console.error(err);status("Error al guardar en nube · revisá la conexión"); alert("No se pudo guardar en Firebase. No cierres la página: revisá la conexión y volvé a intentar.");});
+  return pendingSave;
+}
+function downloadBackup(){
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob), link=document.createElement("a");
+  link.href=url;link.download=`ludopatia-respaldo-${new Date().toISOString().slice(0,10)}.json`;
+  link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function matchKey(m){
+  return [m.fecha,String(m.juego||"").trim().toLowerCase(),String(m.lugar||"").trim().toLowerCase(),Number(m.puntajeSofi),Number(m.puntajeManu)].join("|");
+}
+function mergeHistories(base,incoming){
+  const result=structuredClone(base);
+  result.games=[...new Set([...(base.games||[]),...(incoming.games||[])])];
+  result.locations=[...new Set([...(base.locations||[]),...(incoming.locations||[])])];
+  const count=new Map();
+  for(const m of result.matches){const k=matchKey(m);count.set(k,(count.get(k)||0)+1);}
+  const seen=new Map();let added=0;
+  for(const m of incoming.matches){
+    const k=matchKey(m),n=(seen.get(k)||0)+1;seen.set(k,n);
+    if(n>(count.get(k)||0)){
+      result.matches.push({...m,id:uid(),ganador:Number(m.puntajeManu)>Number(m.puntajeSofi)?"MANU":"SOFI"});
+      added++;count.set(k,(count.get(k)||0)+1);
+    }
   }
-
-  if(syncingFromCloud) return;
-
-  await setDoc(cloudDocRef, {
-    ...state,
-    updatedAt: new Date().toISOString()
-  });
-
-  if($("saveStatus")) $("saveStatus").textContent = "Guardado en nube";
+  return {result,added};
+}
+async function importBackup(file){
+  if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    if(!Array.isArray(data.matches)||!Array.isArray(data.games)||!Array.isArray(data.locations))throw Error("Formato de respaldo inválido");
+    const {result,added}=mergeHistories(state,data);
+    if(!confirm(`Se agregarán ${added} partidas únicas de ${data.matches.length} registros del archivo. Las coincidencias exactas se conservarán una sola vez entre historiales, respetando repeticiones dentro de cada historial. ¿Continuar?`))return;
+    downloadBackup();state=result;await saveState();render();
+    alert(`Importación terminada: ${added} partidas agregadas. Se descargó una copia de seguridad previa.`);
+  }catch(err){alert("No se pudo importar: "+err.message);}
 }
 
 function normalizeName(value){
@@ -121,21 +164,21 @@ function uid(){
 }
 
 function gameColorMap(){
-  const saved = JSON.parse(localStorage.getItem(GAME_COLORS_KEY) || "{}");
+  const saved = gameColors;
   state.games.forEach((game, index) => {
     if(!saved[game]){
       const used = Object.values(saved);
       saved[game] = DEFAULT_GAME_COLORS.find(c => !used.includes(c)) || DEFAULT_GAME_COLORS[index % DEFAULT_GAME_COLORS.length];
     }
   });
-  localStorage.setItem(GAME_COLORS_KEY, JSON.stringify(saved));
+
   return saved;
 }
 
 function setGameColor(game, color){
   const map = gameColorMap();
   map[game] = color;
-  localStorage.setItem(GAME_COLORS_KEY, JSON.stringify(map));
+  gameColors = map;
 }
 
 function gameColor(game){
@@ -358,7 +401,7 @@ function renameGame(oldName, newName){
   const map = gameColorMap();
   map[newName] = map[oldName] || nextAvailableGameColor();
   delete map[oldName];
-  localStorage.setItem(GAME_COLORS_KEY, JSON.stringify(map));
+  gameColors = map;
   saveState(); render(); renderModalList();
 }
 
@@ -661,7 +704,7 @@ document.addEventListener("click", (e)=>{
   if(dg && confirm(`¿Borrar el juego "${dg}"?`)){
     if(state.matches.some(p=>p.juego===dg)) return alert("No se puede borrar un juego que ya tiene partidas. Podés renombrarlo o borrar primero esas partidas.");
     state.games = state.games.filter(g=>g!==dg);
-    const map = gameColorMap(); delete map[dg]; localStorage.setItem(GAME_COLORS_KEY, JSON.stringify(map));
+    const map = gameColorMap(); delete map[dg]; gameColors = map;
     saveState(); render(); renderModalList();
   }
 
@@ -686,42 +729,34 @@ window.addEventListener("resize", () => {
   }, 150);
 });
 
-async function initCloudSync(){
-  if(!firebaseEnabled){
-    render();
-    return;
-  }
-
-  if($("saveStatus")) $("saveStatus").textContent = "Conectando nube...";
-
-  const snap = await getDoc(cloudDocRef);
-
-  if(!snap.exists()){
-    await setDoc(cloudDocRef, {
-      ...state,
-      updatedAt: new Date().toISOString()
-    });
-  }
-
-  onSnapshot(cloudDocRef, (snapshot) => {
-    if(!snapshot.exists()) return;
-
-    syncingFromCloud = true;
-    const cloudState = snapshot.data();
-
-    state = {
-      games: cloudState.games || [],
-      locations: cloudState.locations || [],
-      matches: cloudState.matches || []
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-
-    if($("saveStatus")) $("saveStatus").textContent = "Modo nube";
-    render();
-
-    syncingFromCloud = false;
-  });
+function setCloudAccess(ready){
+  cloudReady=ready;
+  document.body.classList.toggle("cloud-unavailable",!ready);
+  const form=$("matchForm");
+  if(form) for(const el of form.elements) el.disabled=!ready;
 }
-
+async function initCloudSync(){
+  setCloudAccess(false);
+  status("Conectando con Firebase...");
+  if(!firebaseEnabled){status("Firebase no configurado · carga bloqueada");render();return;}
+  try{
+    // Creación atómica: dos teléfonos que abren por primera vez no pisan datos.
+    await runTransaction(db,async transaction=>{
+      const snap=await transaction.get(cloudDocRef);
+      if(!snap.exists()) transaction.set(cloudDocRef,{...state,updatedAt:new Date().toISOString()});
+    });
+    onSnapshot(cloudDocRef,snapshot=>{
+      if(!snapshot.exists()) {setCloudAccess(false);status("Base en nube no disponible");return;}
+      if(snapshot.metadata.hasPendingWrites)return;
+      const cloud=snapshot.data();
+      state={games:cloud.games||[],locations:cloud.locations||[],matches:cloud.matches||[]};
+      lastCloudMatches=structuredClone(state.matches);
+      setCloudAccess(true);
+      status("Sincronizado con Firebase · solo nube");
+      render();
+    },err=>{console.error(err);setCloudAccess(false);status("Sin conexión a Firebase · carga bloqueada");});
+  }catch(err){console.error(err);setCloudAccess(false);status("Error de Firebase · carga bloqueada");render();}
+}
+$("downloadBackup").addEventListener("click",downloadBackup);
+$("importBackup").addEventListener("change",e=>{importBackup(e.target.files[0]);e.target.value="";});
 initCloudSync();
