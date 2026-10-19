@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-:root{--bg:#09141e;--surface:#122431;--surface2:#182e3c;--line:#2a4351;--ink:#eff7fa;--muted:#a1b4c0;--accent:#a4f0cf;--blue:#60c4ef;--red:#ff8e87;--shadow:0 24px 60px #020c1466}
+:root{--bg:#09141e;--surface:#122431;--surface2:#182e3c;--line:#2a4351;--ink:#eff7fa;--muted:#a1b4c0;--accent:#a4f0cf;--blue:#8DBCE8;--red:#E9A0B4;--shadow:0 24px 60px #020c1466}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 15% -10%,#20485b 0%,transparent 44%),radial-gradient(ellipse at 100% 25%,#123f3c 0%,transparent 42%),var(--bg);color:var(--ink);font:15px/1.5 'DM Sans',sans-serif;min-height:100vh}
 h1,h2,h3,strong{font-family:'Space Grotesk',sans-serif}h1{font-size:clamp(36px,6vw,72px);letter-spacing:-.065em;line-height:1.03;margin:5px 0 12px}h2{font-size:clamp(18px,2.4vw,23px);letter-spacing:-.035em;margin:0}h3{margin:0 0 12px}.hero{max-width:1240px;margin:0 auto;padding:60px 28px 34px;display:flex;align-items:end;justify-content:space-between;gap:22px}.eyebrow{color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;margin:0 0 12px}.subtitle{color:var(--muted);font-size:16px;margin:0}.version-tag{display:inline-flex;vertical-align:middle;align-items:center;margin-left:15px;border:1px solid #4e736d;border-radius:8px;padding:6px 9px;font:700 13px 'DM Sans';letter-spacing:0;color:var(--accent)}.actions{display:flex;gap:10px;flex-wrap:wrap}
 main,.backup-tools{max-width:1240px;margin:auto;padding-left:28px;padding-right:28px}.backup-tools{display:flex;align-items:center;gap:12px;padding-top:12px;padding-bottom:26px;flex-wrap:wrap}.backup-tools>div{margin-right:auto}.backup-tools strong{display:block;font-size:13px}.backup-tools small{display:block;color:var(--muted);font-size:12px}.backup-upload{display:inline-flex!important;align-items:center;cursor:pointer}.panel{background:linear-gradient(145deg,#162b39 0%,#11232f 100%);border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:var(--shadow);min-width:0}.main-card{margin-bottom:22px}.summary-card{margin-bottom:22px}.history-home{margin-bottom:42px}.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}.section-title:after{display:none}#saveStatus{color:var(--accent);font-size:12px;font-weight:700;background:#173c39;border:1px solid #295c51;border-radius:100px;padding:7px 12px}
@@ -13,3 +13,20 @@ body.cloud-unavailable #homePage, body.cloud-unavailable #detailsPage { pointer-
 /* Herramientas de respaldo al pie de la página */
 .backup-tools{margin-top:28px;padding-top:22px;padding-bottom:32px;border-top:1px solid var(--line)}
 .backup-tools button,.backup-tools .backup-upload{text-transform:uppercase;letter-spacing:.04em}
+
+/* 3.2.3: historial de últimos encuentros adaptado a pantallas pequeñas. */
+@media (max-width: 600px) {
+  .history-home {min-width:0;}
+  .history-home .table-wrap {width:100%;max-width:100%;overflow-x:hidden;}
+  .history-home table {width:100%;min-width:0;table-layout:fixed;}
+  .history-home th,.history-home td {padding:9px 3px;font-size:clamp(9px,2.55vw,12px);letter-spacing:0;white-space:normal;overflow-wrap:anywhere;line-height:1.25;}
+  .history-home th:nth-child(1),.history-home td:nth-child(1){width:19%;}
+  .history-home th:nth-child(2),.history-home td:nth-child(2){width:20%;}
+  .history-home th:nth-child(3),.history-home td:nth-child(3){width:23%;}
+  .history-home th:nth-child(4),.history-home td:nth-child(4),
+  .history-home th:nth-child(5),.history-home td:nth-child(5){width:13%;text-align:center;}
+  .history-home th:nth-child(6),.history-home td:nth-child(6){width:12%;text-align:center;}
+  .history-home .game-badge {max-width:100%;padding:3px 4px;font-size:clamp(8px,2.2vw,10px);white-space:normal;overflow-wrap:anywhere;}
+  .history-home .score {font-size:clamp(11px,3vw,14px);}
+  .history-home .edit-mini {padding:5px 3px;min-width:26px;border-radius:6px;font-size:12px;}
+}

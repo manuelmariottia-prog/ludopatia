@@ -1,13 +1,5 @@
-LUDOPATÍA 3.2.1 — PAQUETE LIMPIO PARA PUBLICAR
-
-Contiene únicamente los archivos necesarios para ejecutar y publicar la aplicación.
-
-Vercel: Framework Vite; Build Command npm run build; Output Directory dist.
-
-Este paquete NO contiene .git ni node_modules. Para actualizar el proyecto de Vercel ya vinculado a GitHub, copiá estos archivos en la raíz de un CLON del repositorio existente (conservando su .git), y luego hacé git add, commit y push.
-
-Datos: el código usa el documento app/state_clean_20261019_v1 de Firestore. No elimina registros previos ni garantiza que ese documento esté vacío si ya fue utilizado.
-
-ATENCIÓN: la versión actual guarda el historial compartido como un documento único y usa transacciones para las escrituras. La sincronización y las reglas de seguridad de Firestore deben probarse antes de cargar todas las partidas.
-
-VERSION 3.2.2: Herramientas de respaldo movidas al final; ambos botones en mayusculas. Sin cambios en Firebase ni en los datos.
+LUDOPATÍA 3.2.4 — colores de jugadores más suaves.
+MANU: azul pastel #8DBCE8; SOFI: rosa empolvado #E9A0B4.
+Incluye la tabla móvil corregida de 3.2.3.
+No cambia Firebase ni las partidas.
+Copiar archivos al repositorio LUDOPATIA_PUBLICAR conservando .git, luego git add ., git commit y git push.

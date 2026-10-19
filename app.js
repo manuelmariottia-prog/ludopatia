@@ -30,8 +30,8 @@ const PALETTE = {
 };
 
 const PLAYER_COLORS = {
-  MANU: PALETTE.blue,
-  SOFI: PALETTE.red
+  MANU: "#8DBCE8",
+  SOFI: "#E9A0B4"
 };
 
 const DEFAULT_GAME_COLORS = [
