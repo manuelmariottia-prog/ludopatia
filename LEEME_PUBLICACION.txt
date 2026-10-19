@@ -9,3 +9,5 @@ Este paquete NO contiene .git ni node_modules. Para actualizar el proyecto de Ve
 Datos: el código usa el documento app/state_clean_20261019_v1 de Firestore. No elimina registros previos ni garantiza que ese documento esté vacío si ya fue utilizado.
 
 ATENCIÓN: la versión actual guarda el historial compartido como un documento único y usa transacciones para las escrituras. La sincronización y las reglas de seguridad de Firestore deben probarse antes de cargar todas las partidas.
+
+VERSION 3.2.2: Herramientas de respaldo movidas al final; ambos botones en mayusculas. Sin cambios en Firebase ni en los datos.
